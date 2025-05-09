@@ -20,16 +20,22 @@ class axi_slave_write_driver extends uvm_component;
         bit [63:0] data = vif.wdata;
         bit [7:0]  strb = vif.wstrb;
         bit       last = vif.wlast;
-        `uvm_info("SLAVE_DRV", $sformatf("Received WDATA: 0x%0h LAST=%0b", data, last), UVM_MEDIUM)
-      end
+        `uvm_info("SLAVE_DRV", $sformatf("Received WDATA[%0d]: 0x%0h LAST=%0b", i, data, last), UVM_MEDIUM)
 
-      @(posedge vif.clk);
-      vif.bid    <= awid;
-      vif.bresp  <= 2'b00; // OKAY
-      vif.bvalid <= 1;
-      wait (vif.bready);
-      @(posedge vif.clk);
-      vif.bvalid <= 0;
+        if (i == awlen) begin
+          if (!last) begin
+            `uvm_error("SLAVE_DRV", "Expected WLAST=1 on last beat, but got WLAST=0")
+          end
+
+          @(posedge vif.clk);
+          vif.bid    <= awid;
+          vif.bresp  <= 2'b00; // OKAY
+          vif.bvalid <= 1;
+          wait (vif.bready);
+          @(posedge vif.clk);
+          vif.bvalid <= 0;
+        end
+      end
     end
   endtask
 endclass
